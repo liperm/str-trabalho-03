@@ -21,28 +21,108 @@ static bool s_pad_activated[TOUCH_PAD_MAX];
 static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
 
 /*
-ACCELERATE = D13
-BREAK = D14
+1 - ACCELERATE = D13,
+2 - BREAK = D12,
+3 - AIRBAG = D14
+4 - BELT = D27,
+5 - LOCK = D33,
+6 - HOT = D32,
+7 - WINDOW = D4,
+8 - LIGHTS = D15,
 */
-enum actions
+enum sensors
 {
     ACCELERATE = 4,
-    BREAK = 6
+    BREAK = 5,
+    AIRBAG = 6,
+    BELT = 7,
+    LOCK = 8,
+    HOT = 9,
+    WINDOW = 0,
+    LIGHTS = 3,
 };
 
 static void thread_motor(void *pvParameter)
 {
     while (1)
     {
-        usleep(11);
+        // usleep(11);
         if (s_pad_activated[ACCELERATE] == true)
         {
-            printf("VRUUUUUMMMM");
             // clock_gettime(CLOCK_MONOTONIC, &clock_accelerate_start);
-            usleep(16);
             s_pad_activated[ACCELERATE] = false;
             // clock_gettime(CLOCK_MONOTONIC, &ACCELERATE_CLOCK_END);
         }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void thread_abs(void *pvParameter)
+{
+    while (1)
+    {
+        // usleep(11);
+        if (s_pad_activated[BREAK] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &ABS_CLOCK_START);
+            s_pad_activated[BREAK] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &ABS_CLOCK_END);
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void thread_airbag(void *pvParameter)
+{
+    while (1)
+    {
+        if (s_pad_activated[AIRBAG] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_START);
+            s_pad_activated[AIRBAG] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_END);
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void thread_belt(void *pvParameter)
+{
+    while (1)
+    {
+        if (s_pad_activated[BELT] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_START);
+            s_pad_activated[BELT] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_END);
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+static void thread_lvt(void *pvParameter)
+{
+    while (1)
+    {
+        if (s_pad_activated[LOCK] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_START);
+            s_pad_activated[LOCK] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_END);
+        }
+        if (s_pad_activated[WINDOW] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_START);
+            s_pad_activated[WINDOW] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_END);
+        }
+        if (s_pad_activated[LIGHTS] == true)
+        {
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_START);
+            s_pad_activated[LIGHTS] = false;
+            // clock_gettime(CLOCK_MONOTONIC, &AIRBAG_CLOCK_END);
+        }
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -79,16 +159,44 @@ static void read_touch(void *pvParameter)
         if (s_pad_activated[ACCELERATE] == true)
         {
             printf("\nAccelerate");
-            
             // Clear information on pad activation
         }
         else if (s_pad_activated[BREAK] == true)
         {
             printf("\nBreak");
-
             // Clear information on pad activation
-            s_pad_activated[BREAK] = false;
         }
+        else if (s_pad_activated[AIRBAG] == true)
+        {
+            printf("\nAirbag");
+            // Clear information on pad activation
+        }
+        else if (s_pad_activated[BELT] == true)
+        {
+            printf("\nBelt");
+            // Clear information on pad activation
+        }
+        else if (s_pad_activated[LOCK] == true)
+        {
+            printf("\nLock");
+            // Clear information on pad activation
+        }
+        else if (s_pad_activated[WINDOW] == true)
+        {
+            printf("\nWINDOW");
+            // Clear information on pad activation
+        }
+        else if (s_pad_activated[LIGHTS] == true)
+        {
+            printf("\nLIGHTS");
+            // Clear information on pad activation
+        }
+        // else if (s_pad_activated[HOT] == true)
+        // {
+        //     printf("\nHOT");
+        //     // Clear information on pad activation
+        // }
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -105,6 +213,30 @@ static void tp_example_rtc_intr(void *arg)
     else if ((pad_intr >> BREAK) & 0x01)
     {
         s_pad_activated[BREAK] = true;
+    }
+    else if ((pad_intr >> AIRBAG) & 0x01)
+    {
+        s_pad_activated[AIRBAG] = true;
+    }
+    else if ((pad_intr >> BELT) & 0x01)
+    {
+        s_pad_activated[BELT] = true;
+    }
+    else if ((pad_intr >> LOCK) & 0x01)
+    {
+        s_pad_activated[LOCK] = true;
+    }
+    else if ((pad_intr >> HOT) & 0x01)
+    {
+        s_pad_activated[HOT] = true;
+    }
+    else if ((pad_intr >> WINDOW) & 0x01)
+    {
+        s_pad_activated[WINDOW] = true;
+    }
+    else if ((pad_intr >> LIGHTS) & 0x01)
+    {
+        s_pad_activated[LIGHTS] = true;
     }
 }
 
@@ -142,4 +274,8 @@ void app_main(void)
     // Start a task to show what pads have been touched
     xTaskCreate(&read_touch, "touch_pad_read_task", 2048, NULL, 5, NULL);
     xTaskCreate(&thread_motor, "thread_motor", 2048, NULL, 5, NULL);
+    xTaskCreate(&thread_abs, "thread_abs", 2048, NULL, 5, NULL);
+    xTaskCreate(&thread_airbag, "thread_airbag", 2048, NULL, 5, NULL);
+    xTaskCreate(&thread_belt, "thread_belt", 2048, NULL, 5, NULL);
+    xTaskCreate(&thread_lvt, "thread_lock", 2048, NULL, 5, NULL);
 }
